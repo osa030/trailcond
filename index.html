@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>H27 Train Congection</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.0.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.js"></script>
+    <style>
+      body {
+      padding: 0;
+      margin: 0
+      }
+      html,
+      body,
+      #map {
+      height: 100%;
+      width: 100%;
+      }
+      .legend {
+      line-height: 18px;
+      color: #555;
+      }
+      .legend i {
+      width: 18px;
+      height: 18px;
+      float: left;
+      margin-right: 8px;
+      opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      function getParameterByName(name) {
+      	var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+      	return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+      }
+      var lat  = getParameterByName('lat')  || 35.685175;
+      var lng  = getParameterByName('lng')  || 139.7528;
+      var zoom = getParameterByName('zoom') || 11;
+
+      function getColor(d) {
+      	return d >= 200 ? '#9900E5' : 
+      	       d >= 180 ? '#E5004C' : 
+      	       d >= 150 ? '#E59900' : 
+      	       d >= 100 ? '#4CE500' : 
+      	                  '#00E598';
+      }
+      
+      var map = L.map('map');
+      L.tileLayer('http://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', {
+      	attribution: "<a href='http://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル</a>"
+      }).addTo(map);
+      map.setView([lat, lng], zoom);
+      
+      var geojsonLayer = new L.GeoJSON.AJAX("h27_cong.geojson", {
+      	onEachFeature: function(f, l) {
+      		var out = [];
+      		if (f.properties) {
+      			for (key in f.properties) {
+      				out.push(key + ": " + f.properties[key]);
+      			}
+      			l.bindPopup(out.join("<br />"));
+      		}
+      	},
+      	style: function(f) {
+      		cong = f.properties.Congestion;
+      		return {
+      			color: getColor(cong),
+      			opacity: 0.9,
+      			weight: 15,
+      		};
+      	}
+      }).addTo(map);
+      
+      var legend = L.control({
+      	position: 'bottomright'
+      });
+      legend.onAdd = function(map) {
+      	var div = L.DomUtil.create('div', 'info legend'),
+      		grades = [0, 100, 150, 180, 200],
+      		labels = [];
+      	for (var i = 0; i < grades.length; i++) {
+      		div.innerHTML += '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' + grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+      	}
+      	return div;
+      };
+      legend.addTo(map);
+    </script>
+  </body>
+</html>
